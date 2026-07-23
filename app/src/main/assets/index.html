@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>DeducTrack AU - Tax Invoice Manager with AI</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface-light:#334155;--text:#f1f5f9;--text-muted:#94a3b8;--accent:#38bdf8;--accent-glow:rgba(56,189,248,0.3);--success:#4ade80;--warning:#fbbf24;--danger:#f87171;--ato:#00843d;--g1:#0ea5e9;--g2:#8b5cf6;--ai-purple:#a855f7;--ai-pink:#ec4899}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding-bottom:88px}
+
+/* Splash */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s,visibility .6s}
+#splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.splash-logo{width:100px;height:100px;background:linear-gradient(135deg,var(--g1),var(--ai-purple));border-radius:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 20px 60px var(--accent-glow);animation:pulse 2s ease-in-out infinite}
+.splash-logo i{font-size:48px;color:white}
+.splash-title{margin-top:24px;font-size:28px;font-weight:800;letter-spacing:-0.5px}
+.splash-sub{margin-top:8px;color:var(--text-muted);font-size:14px}
+.splash-ato{margin-top:32px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ato)}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+/* App */
+#app{display:none}
+#app.active{display:block}
+
+/* Header */
+.header{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:16px 20px}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:20px;font-weight:700}
+.brand{display:flex;align-items:center;gap:10px}.brand-mark{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--g1),var(--ai-purple));color:#fff;font-size:17px}
+.header-actions{display:flex;gap:10px}
+.icon-btn{width:40px;height:40px;border-radius:12px;background:var(--surface);border:1px solid rgba(255,255,255,.08);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;font-size:15px}
+.icon-btn:active{transform:scale(.92);background:var(--surface-light)}
+.icon-btn.ai-btn{background:linear-gradient(135deg,var(--ai-purple),var(--ai-pink));border:none;color:white;box-shadow:0 4px 12px rgba(168,85,247,0.35)}
+
+/* AI Feature Banner */
+.ai-banner{margin:12px 20px 0;background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(236,72,153,0.15));border:1px solid rgba(168,85,247,0.3);border-radius:18px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ai-banner-left{display:flex;align-items:center;gap:12px}
+.ai-badge-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--ai-purple),var(--ai-pink));display:flex;align-items:center;justify-content:center;color:white;font-size:18px;flex-shrink:0}
+.ai-banner-title{font-size:13px;font-weight:700;color:#f3e8ff}
+.ai-banner-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.ai-scan-btn{padding:8px 14px;border-radius:12px;background:linear-gradient(135deg,var(--ai-purple),var(--ai-pink));border:none;color:white;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(168,85,247,0.4);transition:all .2s;white-space:nowrap}
+.ai-scan-btn:active{transform:scale(.94)}
+
+/* Stats */
+.stats-scroll{display:flex;gap:12px;padding:16px 20px;overflow-x:auto;scrollbar-width:none}
+.stats-scroll::-webkit-scrollbar{display:none}
+.stat-card{min-width:140px;background:var(--surface);border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,.05);flex-shrink:0}
+.stat-card.glow{background:linear-gradient(135deg,rgba(14,165,233,.15),rgba(139,92,246,.15));border-color:rgba(56,189,248,.2)}
+.stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-value{font-size:24px;font-weight:800;margin-top:6px;letter-spacing:-0.5px}
+.stat-change{font-size:12px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.stat-change.up{color:var(--success)}
+
+/* ATO Banner */
+.ato-banner{margin:0 20px 16px;background:linear-gradient(135deg,rgba(0,132,61,.15),rgba(0,132,61,.05));border:1px solid rgba(0,132,61,.2);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.ato-banner i{color:var(--ato);font-size:20px}
+.ato-banner-text{font-size:13px;color:var(--text)}
+.ato-banner-text strong{color:var(--ato)}
+
+/* Search Controls */
+.search-bar{margin:0 20px 12px;position:relative}
+.search-bar i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted)}
+.search-bar input{width:100%;padding:14px 16px 14px 44px;border-radius:16px;background:var(--surface);border:1px solid rgba(255,255,255,.08);color:var(--text);font-size:15px;font-family:inherit;outline:none}
+.search-bar input:focus{border-color:var(--accent)}
+.search-controls{display:flex;gap:8px;margin:0 20px 12px}.search-controls .search-bar{flex:1;margin:0}.date-filter{width:48px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:var(--surface);color:var(--text);padding:0 12px;cursor:pointer}.date-filter::-webkit-calendar-picker-indicator{filter:invert(1)}
+
+/* Section title */
+.section-title{padding:8px 20px 4px;font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;justify-content:space-between}
+
+/* Filters */
+.filter-bar{display:flex;gap:8px;padding:8px 20px 16px;overflow-x:auto;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{padding:8px 16px;border-radius:100px;background:var(--surface);border:1px solid rgba(255,255,255,.08);color:var(--text-muted);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .2s}
+.filter-chip.active{background:linear-gradient(135deg,var(--g1),var(--g2));color:white;border-color:transparent}
+.filter-chip:active{transform:scale(.95)}
+
+/* Invoice list */
+.invoice-list{padding:0 20px 100px}
+.date-group-title{font-size:13px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:18px 0 8px}.view-all-bottom{margin:4px 20px 110px}.view-all-bottom button{width:100%;padding:15px;border:1px solid rgba(56,189,248,.35);border-radius:16px;background:rgba(56,189,248,.08);color:var(--accent);font:inherit;font-weight:700;cursor:pointer}.view-all-bottom i{margin-left:8px}@media (min-width:760px){.view-all-bottom{width:calc(100% - 68px);max-width:1172px;margin:4px auto 130px}.view-all-bottom button{max-width:380px;display:block;margin:0 auto}}
+.invoice-card{background:var(--surface);border-radius:20px;margin-bottom:12px;border:1px solid rgba(255,255,255,.05);overflow:hidden;transition:all .3s;animation:slideUp .4s ease backwards;cursor:pointer}
+.invoice-card:active{transform:scale(.98)}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.invoice-main{padding:16px;display:flex;align-items:center;gap:14px}
+.invoice-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.invoice-icon.work{background:rgba(56,189,248,.15);color:var(--accent)}
+.invoice-icon.vehicle{background:rgba(251,191,36,.15);color:var(--warning)}
+.invoice-icon.home{background:rgba(74,222,128,.15);color:var(--success)}
+.invoice-icon.health{background:rgba(248,113,113,.15);color:var(--danger)}
+.invoice-icon.education{background:rgba(139,92,246,.15);color:#a78bfa}
+.invoice-icon.investment{background:rgba(236,72,153,.15);color:#f472b6}
+.invoice-icon.donation{background:rgba(34,197,94,.15);color:#4ade80}
+.invoice-icon.other{background:rgba(148,163,184,.15);color:var(--text-muted)}
+.invoice-info{flex:1;min-width:0}
+.invoice-title{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.invoice-meta{font-size:12px;color:var(--text-muted);margin-top:3px}
+.invoice-amount{text-align:right}
+.invoice-amount .amount{font-size:18px;font-weight:700}
+.invoice-amount .gst{font-size:11px;color:var(--text-muted)}
+.receipt-thumb{width:100%;height:160px;object-fit:cover;border-radius:12px;margin:0 16px 12px;background:var(--bg)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state i{font-size:64px;margin-bottom:16px;opacity:.5}
+.empty-state h3{font-size:18px;color:var(--text);margin-bottom:8px}
+
+/* Modals */
+.modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-sheet{width:100%;background:var(--surface);border-radius:32px 32px 0 0;padding:24px 20px 32px;transform:translateY(100%);transition:transform .4s cubic-bezier(.34,1.56,.64,1);max-height:92vh;overflow-y:auto}
+.modal-overlay.open .modal-sheet{transform:translateY(0)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px}
+.modal-close{width:36px;height:36px;border-radius:12px;background:var(--bg);border:none;color:var(--text-muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* Forms */
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.form-input,.form-select{width:100%;padding:14px 16px;border-radius:16px;background:var(--bg);border:1px solid rgba(255,255,255,.08);color:var(--text);font-size:15px;font-family:inherit;outline:none;transition:all .2s}
+.form-input:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.form-input::placeholder{color:var(--text-muted)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.category-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.category-option{aspect-ratio:1;border-radius:16px;background:var(--bg);border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;transition:all .2s}
+.category-option i{font-size:20px}
+.category-option span{font-size:10px;font-weight:600}
+.category-option.selected{border-color:var(--accent);background:rgba(56,189,248,.1)}
+.category-option:active{transform:scale(.95)}
+
+.btn-primary{width:100%;padding:16px;border-radius:16px;background:linear-gradient(135deg,var(--g1),var(--g2));border:none;color:white;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:active{transform:scale(.98);opacity:.9}
+.btn-ai{background:linear-gradient(135deg,var(--ai-purple),var(--ai-pink));box-shadow:0 6px 20px rgba(168,85,247,0.4)}
+.btn-secondary{width:100%;padding:14px;border-radius:16px;background:var(--bg);border:1px solid rgba(255,255,255,.1);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* AI Extraction Status Box */
+.ai-loader-box{display:none;background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(236,72,153,0.15));border:1px dashed var(--ai-purple);border-radius:16px;padding:16px;margin-bottom:16px;text-align:center}
+.ai-loader-box.active{display:block;animation:fadeIn 0.3s ease}
+.ai-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--ai-purple);border-radius:50%;margin:0 auto 10px;animation:spin 0.8s linear infinite}
+.ai-loader-title{font-size:13px;font-weight:700;color:#f3e8ff;display:flex;align-items:center;justify-content:center;gap:6px}
+.ai-loader-sub{font-size:11px;color:var(--text-muted);margin-top:4px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+.ai-field-highlight{animation:fieldPulse 1.5s ease-in-out 2}
+@keyframes fieldPulse{0%,100%{border-color:rgba(255,255,255,0.08)}50%{border-color:var(--ai-purple);box-shadow:0 0 12px rgba(168,85,247,0.4)}}
+
+/* Camera */
+.camera-preview{width:100%;aspect-ratio:4/3;background:var(--bg);border-radius:20px;overflow:hidden;position:relative;margin-bottom:16px;display:flex;align-items:center;justify-content:center}
+.camera-preview video,.camera-preview img{width:100%;height:100%;object-fit:cover}
+.camera-placeholder{display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--text-muted)}
+.camera-placeholder i{font-size:48px}
+.camera-corner{position:absolute;width:24px;height:24px;border-color:var(--ai-purple);border-style:solid}
+.camera-corner.tl{top:16px;left:16px;border-width:3px 0 0 3px}
+.camera-corner.tr{top:16px;right:16px;border-width:3px 3px 0 0}
+.camera-corner.bl{bottom:16px;left:16px;border-width:0 0 3px 3px}
+.camera-corner.br{bottom:16px;right:16px;border-width:0 3px 3px 0}
+
+/* Report */
+.report-section{background:var(--bg);border-radius:20px;padding:20px;margin-bottom:16px}
+.report-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.report-row:last-child{border-bottom:none}
+.report-row.total{font-size:18px;font-weight:700;color:var(--accent);border-top:2px solid rgba(255,255,255,.1);margin-top:8px;padding-top:16px}
+.report-bar{height:8px;background:var(--surface-light);border-radius:100px;margin-top:8px;overflow:hidden}
+.report-bar-fill{height:100%;border-radius:100px;transition:width .6s ease}
+
+/* Settings */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.setting-info h4{font-size:15px;font-weight:600}
+.setting-info p{font-size:13px;color:var(--text-muted);margin-top:2px}
+.toggle{width:52px;height:30px;background:var(--surface-light);border-radius:100px;position:relative;cursor:pointer;transition:all .3s}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;background:white;border-radius:50%;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{left:25px}
+
+/* Toast */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface);color:var(--text);padding:14px 24px;border-radius:16px;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:1000;opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.1)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:rgba(74,222,128,.4);color:#4ade80}
+.toast.ai{border-color:rgba(168,85,247,.5);color:#e9d5ff}
+.toast.error{border-color:rgba(248,113,113,.4);color:#f87171}
+
+.bottom-nav{position:fixed;z-index:250;bottom:14px;left:50%;transform:translateX(-50%);width:min(520px,calc(100% - 28px));height:66px;padding:6px;background:rgba(30,41,59,.96);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:20px;box-shadow:0 12px 36px rgba(0,0,0,.32);display:flex;justify-content:space-around}.nav-btn{flex:1;background:none;border:0;border-radius:14px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:inherit;font-size:11px;cursor:pointer;transition:all .2s}.nav-btn i{font-size:18px}.nav-btn.active{color:#fff;background:linear-gradient(135deg,rgba(14,165,233,.28),rgba(139,92,246,.28));box-shadow:inset 0 0 0 1px rgba(56,189,248,.2)}.quick-add{position:fixed;z-index:260;right:22px;bottom:94px;width:58px;height:58px;border:0;border-radius:18px;background:linear-gradient(135deg,var(--ai-purple),var(--ai-pink));color:#fff;font-size:23px;box-shadow:0 10px 28px rgba(168,85,247,0.4);cursor:pointer;transition:transform .2s}.quick-add:active{transform:scale(.92)}
+
+@media (min-width:760px){body{padding-bottom:110px;background:radial-gradient(circle at 50% -20%,#1c3154 0,#0f172a 42%,#0b1120 100%)}#app{max-width:1240px;margin:0 auto;min-height:100vh;background:rgba(15,23,42,.72);border-left:1px solid rgba(255,255,255,.05);border-right:1px solid rgba(255,255,255,.05)}.header{padding:18px 34px}.stats-scroll{padding:28px 34px 18px;display:grid;grid-template-columns:repeat(3,1fr);overflow:visible}.stat-card{min-width:0;padding:20px}.ai-banner,.ato-banner,.search-controls,.section-title,.filter-bar,.invoice-list{margin-left:auto;margin-right:auto;width:calc(100% - 68px)}.ato-banner{margin-bottom:20px}.search-controls{max-width:none}.filter-bar{padding-left:0;padding-right:0}.section-title{padding-left:0;padding-right:0;margin-top:10px}.invoice-list{padding-left:0;padding-right:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding-bottom:130px}.invoice-list .invoice-card{margin-bottom:0;height:fit-content}.invoice-list .date-group-title{grid-column:1/-1}.invoice-list .empty-state{grid-column:1/-1}.receipt-thumb{height:210px;object-fit:cover}.bottom-nav{width:600px;bottom:22px;height:72px;border-radius:22px}.nav-btn{font-size:12px}.nav-btn i{font-size:19px}.quick-add{right:max(32px,calc((100vw - 1240px)/2 + 32px));bottom:28px;width:68px;height:68px;border-radius:22px}.modal-overlay{align-items:center}.modal-sheet{max-width:620px;border-radius:28px;margin:auto}.detail-receipt{max-height:48vh;object-fit:contain;background:var(--bg)}}
+
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo"><i class="fas fa-wand-magic-sparkles"></i></div>
+  <div class="splash-title">DeducTrack AU</div>
+  <div class="splash-sub">AI Tax Receipt Scanner & Manager</div>
+  <div class="splash-ato"><i class="fas fa-shield-check"></i> ATO Compliant Record Keeping</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="brand"><div class="brand-mark"><i class="fas fa-wand-magic-sparkles"></i></div><div class="header-title">DeducTrack <span style="color:var(--accent)">AU</span></div></div>
+      <div class="header-actions">
+        <button class="icon-btn ai-btn" title="AI Scan Receipt" onclick="triggerUpload()"><i class="fas fa-wand-magic-sparkles"></i></button>
+        <button class="icon-btn" aria-label="Account and settings" onclick="openSettings()"><i class="fas fa-user-circle"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI AUTO-FILL BANNER -->
+  <div class="ai-banner">
+    <div class="ai-banner-left">
+      <div class="ai-badge-icon"><i class="fas fa-brain"></i></div>
+      <div>
+        <div class="ai-banner-title">Gemini AI Receipt Autofill</div>
+        <div class="ai-banner-sub">Scan or upload any receipt to extract text, amount, date & category</div>
+      </div>
+    </div>
+    <button class="ai-scan-btn" onclick="triggerUpload()"><i class="fas fa-wand-magic-sparkles"></i> Upload & AI Fill</button>
+  </div>
+
+  <div class="stats-scroll">
+    <div class="stat-card glow">
+      <div class="stat-label">FY <span id="fyLabel">2025-26</span> Total</div>
+      <div class="stat-value" id="statTotal">$0.00</div>
+      <div class="stat-change up"><i class="fas fa-arrow-up"></i> <span id="statCount">0</span> invoices</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">GST Claimable</div>
+      <div class="stat-value" id="statGst">$0.00</div>
+      <div class="stat-change"><i class="fas fa-percentage"></i> 1/11 of total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Est. Tax Refund</div>
+      <div class="stat-value" id="statRefund">$0.00</div>
+      <div class="stat-change up"><i class="fas fa-piggy-bank"></i> at <span id="rateLabel">30%</span></div>
+    </div>
+  </div>
+
+  <div class="ato-banner">
+    <i class="fas fa-info-circle"></i>
+    <div class="ato-banner-text">Keep records for <strong>5 years</strong>. DeducTrack stores everything locally and safely.</div>
+  </div>
+
+  <div class="search-controls">
+    <div class="search-bar">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" placeholder="Search invoices..." oninput="renderInvoices()">
+    </div>
+    <input class="date-filter" type="date" id="dateFilter" title="Filter by date" onchange="renderInvoices()">
+  </div>
+
+  <div class="section-title"><span>Categories</span><span style="font-size:11px;text-transform:none;font-weight:500">Tap to filter</span></div>
+  <div class="filter-bar" id="filterBar">
+    <div class="filter-chip active" data-cat="all" onclick="setFilter('all')">All</div>
+    <div class="filter-chip" data-cat="work" onclick="setFilter('work')">Work</div>
+    <div class="filter-chip" data-cat="vehicle" onclick="setFilter('vehicle')">Vehicle</div>
+    <div class="filter-chip" data-cat="home" onclick="setFilter('home')">Home Office</div>
+    <div class="filter-chip" data-cat="health" onclick="setFilter('health')">Health</div>
+    <div class="filter-chip" data-cat="education" onclick="setFilter('education')">Education</div>
+    <div class="filter-chip" data-cat="investment" onclick="setFilter('investment')">Investment</div>
+    <div class="filter-chip" data-cat="donation" onclick="setFilter('donation')">Donations</div>
+  </div>
+
+  <div class="section-title"><span id="invoiceSectionTitle">Recent invoices</span><span style="font-size:11px;text-transform:none;font-weight:500" id="invoiceCount">0 items</span></div>
+  <div class="invoice-list" id="invoiceList">
+    <div class="empty-state">
+      <i class="fas fa-receipt"></i>
+      <h3>No invoices yet for FY <span class="fy-empty">2025-26</span></h3>
+      <p>Tap the + button to upload a receipt with AI Auto-fill</p>
+    </div>
+  </div>
+  <div class="view-all-bottom" id="homeViewAll" style="display:none"><button onclick="showAllReceipts()">View all receipts <i class="fas fa-arrow-right"></i></button></div>
+</div>
+
+<!-- MOBILE NAVIGATION -->
+<nav class="bottom-nav" aria-label="Main navigation">
+  <button class="nav-btn active" id="navHome" onclick="showHome()"><i class="fas fa-house"></i><span>Home</span></button>
+  <button class="nav-btn" id="navReceipts" onclick="showAllReceipts()"><i class="fas fa-receipt"></i><span>All receipts</span></button>
+  <button class="nav-btn" id="navSummary" onclick="openSummary()"><i class="fas fa-chart-pie"></i><span>Summary</span></button>
+  <button class="nav-btn" id="navExport" onclick="openExportHub()"><i class="fas fa-file-export"></i><span>Export</span></button>
+</nav>
+<button class="quick-add" aria-label="Add new receipt" title="Add new receipt with AI" onclick="openAddModal()"><i class="fas fa-plus"></i></button>
+<input type="file" id="fileUpload" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+<input type="file" id="editFileUpload" accept="image/*" style="display:none" onchange="handleEditFileUpload(event)">
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span>Add Invoice</span>
+        <span id="aiFillBadge" style="display:none;font-size:11px;padding:4px 10px;border-radius:100px;background:rgba(168,85,247,0.2);color:#d8b4fe;border:1px solid rgba(168,85,247,0.4)">
+          <i class="fas fa-sparkles"></i> AI Auto-filled
+        </span>
+      </div>
+      <button class="modal-close" onclick="closeModal('addModal')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <!-- AI SCANNING LOADER -->
+    <div class="ai-loader-box" id="aiExtractLoader">
+      <div class="ai-spinner"></div>
+      <div class="ai-loader-title"><i class="fas fa-wand-magic-sparkles"></i> Gemini AI Reading Receipt...</div>
+      <div class="ai-loader-sub">Extracting total, date, merchant, ABN & tax category</div>
+    </div>
+
+    <form id="addForm" onsubmit="saveInvoice(event)">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <div class="category-grid">
+          <div class="category-option selected" data-cat="work" onclick="selectCat(this)"><i class="fas fa-briefcase" style="color:var(--accent)"></i><span>Work</span></div>
+          <div class="category-option" data-cat="vehicle" onclick="selectCat(this)"><i class="fas fa-car" style="color:var(--warning)"></i><span>Vehicle</span></div>
+          <div class="category-option" data-cat="home" onclick="selectCat(this)"><i class="fas fa-home" style="color:var(--success)"></i><span>Home</span></div>
+          <div class="category-option" data-cat="health" onclick="selectCat(this)"><i class="fas fa-heartbeat" style="color:var(--danger)"></i><span>Health</span></div>
+          <div class="category-option" data-cat="education" onclick="selectCat(this)"><i class="fas fa-graduation-cap" style="color:#a78bfa"></i><span>Study</span></div>
+          <div class="category-option" data-cat="investment" onclick="selectCat(this)"><i class="fas fa-chart-line" style="color:#f472b6"></i><span>Invest</span></div>
+          <div class="category-option" data-cat="donation" onclick="selectCat(this)"><i class="fas fa-hand-holding-heart" style="color:#4ade80"></i><span>Donate</span></div>
+          <div class="category-option" data-cat="other" onclick="selectCat(this)"><i class="fas fa-ellipsis-h" style="color:var(--text-muted)"></i><span>Other</span></div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="invDesc" placeholder="e.g. Office chair from Officeworks" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Amount ($)</label><input type="number" class="form-input" id="invAmount" step="0.01" placeholder="0.00" required></div>
+        <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="invDate" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Merchant</label><input type="text" class="form-input" id="invMerchant" placeholder="Store name"></div>
+        <div class="form-group"><label class="form-label">ABN (optional)</label><input type="text" class="form-input" id="invAbn" placeholder="12 345 678 901"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Notes (optional)</label><input type="text" class="form-input" id="invNotes" placeholder="Any additional details..."></div>
+      <div id="receiptPreviewContainer" style="display:none;margin-bottom:16px"><img id="receiptPreview" class="receipt-thumb" src="" alt="Receipt"></div>
+      <div id="imageActions" style="display:flex;gap:10px;margin-bottom:16px">
+        <button type="button" class="btn-secondary" onclick="addImageFromCamera()" style="flex:1;margin-top:0;font-size:13px;padding:10px"><i class="fas fa-camera"></i> Camera Scan</button>
+        <button type="button" class="btn-secondary" onclick="addImageFromUpload()" style="flex:1;margin-top:0;font-size:13px;padding:10px"><i class="fas fa-image"></i> Upload Image</button>
+      </div>
+      <input type="hidden" id="invImage">
+      <button type="submit" class="btn-primary"><i class="fas fa-check"></i> Save Invoice</button>
+      <button type="button" class="btn-secondary" onclick="closeModal('addModal')">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<!-- SCAN MODAL -->
+<div class="modal-overlay" id="scanModal">
+  <div class="modal-sheet">
+    <div class="modal-header"><div class="modal-title">Scan Receipt</div><button class="modal-close" onclick="closeModal('scanModal');stopCamera()"><i class="fas fa-times"></i></button></div>
+    <div class="camera-preview" id="cameraPreview"><div class="camera-placeholder"><i class="fas fa-camera"></i><span>Camera access required</span></div></div>
+    <div style="display:flex;gap:12px"><button class="btn-primary btn-ai" onclick="capturePhoto()" style="flex:1"><i class="fas fa-wand-magic-sparkles"></i> Capture & AI Autofill</button><button class="btn-secondary" onclick="closeModal('scanModal');stopCamera()" style="flex:1;margin-top:0">Cancel</button></div>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal-sheet">
+    <div class="modal-header"><div class="modal-title" id="fyReportLabel">Tax Summary FY 2025-26</div><button class="modal-close" onclick="closeModal('reportModal')"><i class="fas fa-times"></i></button></div>
+    <div class="report-section">
+      <div class="report-row"><span>Work-Related Expenses</span><span id="reportWork">$0.00</span></div>
+      <div class="report-row"><span>Vehicle & Travel</span><span id="reportVehicle">$0.00</span></div>
+      <div class="report-row"><span>Home Office</span><span id="reportHome">$0.00</span></div>
+      <div class="report-row"><span>Health & Medical</span><span id="reportHealth">$0.00</span></div>
+      <div class="report-row"><span>Self-Education</span><span id="reportEducation">$0.00</span></div>
+      <div class="report-row"><span>Investment Costs</span><span id="reportInvestment">$0.00</span></div>
+      <div class="report-row"><span>Donations</span><span id="reportDonation">$0.00</span></div>
+      <div class="report-row"><span>Other</span><span id="reportOther">$0.00</span></div>
+      <div class="report-row total"><span>Total Deductions</span><span id="reportTotal">$0.00</span></div>
+    </div>
+    <div class="report-section"><div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Category Breakdown</div><div id="reportBars"></div></div>
+    <div class="report-section" style="background:linear-gradient(135deg,rgba(0,132,61,.15),rgba(0,132,61,.05));border:1px solid rgba(0,132,61,.2)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><i class="fas fa-calculator" style="color:var(--ato);font-size:20px"></i><span style="font-weight:700">Estimated Tax Benefit</span></div>
+      <div style="font-size:32px;font-weight:800;color:var(--ato)" id="reportBenefit">$0.00</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Based on your selected tax bracket. Your actual rate may vary.</div>
+    </div>
+    <div id="exportOptions" class="form-label" style="margin:22px 0 10px">Export options</div>
+    <button class="btn-primary" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Export CSV for Tax Agent</button>
+    <button class="btn-primary" onclick="openZipModal()" style="margin-top:10px;background:linear-gradient(135deg,#8b5cf6,#ec4899)"><i class="fas fa-file-archive"></i> Export Receipt Images (ZIP)</button>
+    <button class="btn-secondary" onclick="closeModal('reportModal')">Close</button>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-sheet">
+    <div class="modal-header"><div class="modal-title">Account & settings</div><button class="modal-close" onclick="closeModal('settingsModal')"><i class="fas fa-times"></i></button></div>
+    <div class="report-section" style="margin-bottom:20px"><div style="display:flex;align-items:center;gap:12px"><div class="brand-mark"><i class="fas fa-user"></i></div><div><strong id="accountName">Your account</strong><div id="accountSubtitle" style="font-size:12px;color:var(--text-muted);margin-top:3px">Sign in to securely sync invoice details</div></div></div><button class="btn-secondary" id="accountAction" onclick="openAuthModal()"><i class="fas fa-right-to-bracket"></i> Log in or create account</button><button class="btn-secondary" id="accountLogout" onclick="signOutAccount()" style="display:none"><i class="fas fa-right-from-bracket"></i> Log out</button><div style="font-size:12px;color:var(--text-muted);margin-top:12px"><i class="fas fa-lock"></i> Receipt images remain on this device.</div></div>
+    <div class="form-group">
+      <label class="form-label">Financial Year</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="icon-btn" onclick="changeFY('prev')" style="width:44px;height:44px"><i class="fas fa-chevron-left"></i></button>
+        <div style="flex:1;text-align:center;padding:14px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-weight:700;font-size:16px">FY <span id="fyDisplay">2025-26</span></div>
+        <button class="icon-btn" onclick="changeFY('next')" style="width:44px;height:44px"><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:8px">Jul 1 - Jun 30. Switch to view invoices from different years.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your Annual Income ($)</label>
+      <input type="number" class="form-input" id="userIncome" placeholder="70000" value="70000" onchange="updateIncome()">
+      <p style="font-size:12px;color:var(--text-muted);margin-top:8px">We auto-calculate your tax bracket based on ATO 2025-26 rates.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tax Bracket</label>
+      <select class="form-select" id="taxRate" onchange="updateTaxRate()">
+        <option value="0.0">$0 - $18,200 (Tax Free)</option>
+        <option value="0.16">$18,201 - $45,000 (16%)</option>
+        <option value="0.30" selected>$45,001 - $135,000 (30%)</option>
+        <option value="0.37">$135,001 - $190,000 (37%)</option>
+        <option value="0.45">$190,001+ (45%)</option>
+      </select>
+    </div>
+    <div class="setting-row"><div class="setting-info"><h4>Receipt Reminders</h4><p>Weekly prompt to scan receipts</p></div><div class="toggle on" onclick="toggleSetting(this)"></div></div>
+    <div style="margin:24px 0 16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05)">
+      <div class="form-label" style="margin-bottom:12px">Data management</div>
+      <button class="btn-secondary" onclick="clearFYData()" style="margin-bottom:10px;color:var(--warning);border-color:rgba(251,191,36,.3)"><i class="fas fa-calendar-times"></i> Clear FY <span id="fyClearLabel">2025-26</span> Data Only</button>
+      <button class="btn-secondary" onclick="clearAllData()" style="color:var(--danger);border-color:rgba(248,113,113,.3)"><i class="fas fa-trash-alt"></i> Clear ALL Data (All Years)</button>
+    </div>
+    <button class="btn-secondary" onclick="closeModal('settingsModal')">Close</button>
+  </div>
+</div>
+
+<!-- AUTHENTICATION MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-sheet">
+    <div class="modal-header"><div class="modal-title">Welcome to DeducTrack</div><button class="modal-close" onclick="closeModal('authModal')"><i class="fas fa-times"></i></button></div>
+    <p style="font-size:13px;color:var(--text-muted);line-height:1.5;margin:-8px 0 20px">Sign in to sync invoice details securely across your devices. Receipt images stay on this device.</p>
+    <button class="btn-primary" onclick="signInWithGoogle()" style="background:#fff;color:#334155"><i class="fab fa-google" style="color:#4285f4"></i> Continue with Google</button>
+    <div style="display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text-muted);font-size:12px"><span style="height:1px;flex:1;background:rgba(255,255,255,.1)"></span>OR<span style="height:1px;flex:1;background:rgba(255,255,255,.1)"></span></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+    <button class="btn-primary" onclick="signInWithEmail()"><i class="fas fa-right-to-bracket"></i> Log in</button>
+    <button class="btn-secondary" onclick="createAccount()">Create account with email</button>
+    <div id="authMessage" style="min-height:20px;margin-top:14px;text-align:center;font-size:12px;color:var(--text-muted)"></div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <div class="modal-title">Invoice Details</div>
+      <button class="modal-close" onclick="closeModal('detailModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="detailContent">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <div id="detailCategory" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08)">
+          <div id="detailCatIcon" style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px"></div>
+          <span id="detailCatLabel" style="font-weight:600;font-size:15px"></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <div id="detailDescription" style="padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-size:15px"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount</label>
+          <div id="detailAmount" style="padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-size:18px;font-weight:700;color:var(--accent)"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">GST Component</label>
+          <div id="detailGst" style="padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-size:15px;color:var(--text-muted)"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <div id="detailDate" style="padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-size:15px"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Merchant</label>
+          <div id="detailMerchant" style="padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-size:15px"></div>
+        </div>
+      </div>
+      <div class="form-group" id="detailAbnGroup">
+        <label class="form-label">ABN</label>
+        <div id="detailAbn" style="padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-size:15px;font-family:monospace"></div>
+      </div>
+      <div class="form-group" id="detailNotesGroup">
+        <label class="form-label">Notes</label>
+        <div id="detailNotes" style="padding:14px 16px;background:var(--bg);border-radius:16px;border:1px solid rgba(255,255,255,.08);font-size:15px;color:var(--text-muted);min-height:60px;white-space:pre-wrap"></div>
+      </div>
+      <div class="form-group" id="detailImageGroup" style="display:none">
+        <label class="form-label">Receipt Image</label>
+        <img id="detailImage" class="detail-receipt" style="width:100%;border-radius:16px;cursor:pointer" onclick="viewImage(this.src)">
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="btn-primary" onclick="editFromDetail()" style="flex:1"><i class="fas fa-edit"></i> Edit</button>
+        <button class="btn-secondary" onclick="deleteFromDetail()" style="flex:1;margin-top:0;color:var(--danger);border-color:rgba(248,113,113,.3)"><i class="fas fa-trash"></i> Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ZIP EXPORT MODAL -->
+<div class="modal-overlay" id="zipModal">
+  <div class="modal-sheet">
+    <div class="modal-header"><div class="modal-title">Export Receipt Images (ZIP)</div><button class="modal-close" onclick="closeModal('zipModal')"><i class="fas fa-times"></i></button></div>
+    <div class="form-group">
+      <label class="form-label">Organize ZIP by</label>
+      <div style="display:flex;gap:10px">
+        <button type="button" class="filter-chip active" id="zipByCat" onclick="setZipMode('category')" style="flex:1;text-align:center">Category</button>
+        <button type="button" class="filter-chip" id="zipByMonth" onclick="setZipMode('month')" style="flex:1;text-align:center">Month</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Financial Year</label>
+      <select class="form-select" id="zipFYSelect" onchange="updateZipCount()"></select>
+    </div>
+    <div style="background:var(--bg);border-radius:16px;padding:16px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <i class="fas fa-images" style="color:var(--accent);font-size:20px"></i>
+        <span style="font-weight:600">Images to export: <span id="zipCount">0</span></span>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted)">Images named as: Description_YYYY-MM-DD.jpg</div>
+    </div>
+    <button class="btn-primary" onclick="exportImagesZip()"><i class="fas fa-file-archive"></i> Download ZIP</button>
+    <button class="btn-secondary" onclick="closeModal('zipModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg">Saved!</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
+<script src="firebase-compat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
